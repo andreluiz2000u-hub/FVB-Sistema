@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FVB - Gestao de Funcionarios</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#070707">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <style>
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#070707;--bg2:#0e0e0e;--card:#141414;--card-h:#1a1a1a;--inp:#0b0b0b;--bdr:#1e1e1e;--bdr-h:#2a2a2a;--t1:#f2f2f2;--t2:#888;--t3:#444;--red:#dc2626;--red-l:#ef4444;--red-g:rgba(220,38,38,.2);--grn:#16a34a;--grn-l:#22c55e;--grn-g:rgba(22,163,74,.15);--amb:#f59e0b;--amb-l:#fbbf24;--amb-g:rgba(245,158,11,.12);--blu:#2563eb;--blu-l:#3b82f6;--blu-g:rgba(37,99,235,.12);--side:260px;--r:12px;--rs:8px}
+        body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+        #toasts{position:fixed;top:16px;right:16px;z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+        .toast{pointer-events:auto;padding:14px 22px;border-radius:var(--rs);font-size:13px;font-weight:500;color:#fff;box-shadow:0 8px 30px rgba(0,0,0,.6);animation:tIn .3s ease;display:flex;align-items:center;gap:10px;max-width:380px}
+        .toast.ok{background:linear-gradient(135deg,#15803d,#16a34a)}.toast.err{background:linear-gradient(135deg,#991b1b,#dc2626)}.toast.warn{background:linear-gradient(135deg,#92400e,#f59e0b)}.toast.out{animation:tOut .25s forwards}
+        @keyframes tIn{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes tOut{to{opacity:0;transform:translateX(60px)}}
+        #loading{display:none;position:fixed;inset:0;z-index:99998;background:rgba(7,7,7,.85);backdrop-filter:blur(6px);align-items:center;justify-content:center}
+        #loading.on{display:flex}
+        .spinner{width:48px;height:48px;border:4px solid var(--bdr);border-top-color:var(--red-l);border-radius:50%;animation:spin .7s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .ap{display:none;min-height:100vh;align-items:center;justify-content:center;position:relative;overflow:hidden}
+        .ap.on{display:flex}
+        .abg{position:fixed;inset:0;z-index:0;background:var(--bg)}
+        .abg::before,.abg::after{content:'';position:absolute;border-radius:50%;filter:blur(150px);opacity:.15;animation:bgf 20s ease-in-out infinite}
+        .abg::before{width:600px;height:600px;background:var(--red);top:-200px;right:-100px}
+        .abg::after{width:400px;height:400px;background:var(--blu);bottom:-100px;left:-80px;animation-delay:-10s}
+        @keyframes bgf{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-20px) scale(1.04)}}
+        .acard{position:relative;z-index:1;background:linear-gradient(145deg, var(--card), #111);border:1px solid var(--bdr);border-radius:20px;padding:44px 36px;width:100%;max-width:400px;margin:16px;box-shadow:0 30px 80px rgba(0,0,0,.6);animation:cIn .45s ease}
+        @keyframes cIn{from{opacity:0;transform:translateY(24px) scale(.97)}}
+        .alogo{text-align:center;margin-bottom:28px}
+        .alogo img{width:150px;height:auto;margin:0 auto}
+        .alogo .cn{display:none}
+        .atit{font-size:22px;font-weight:800;margin-bottom:4px}.asub{font-size:13px;color:var(--t2);margin-bottom:24px}
+        .fg{margin-bottom:18px}
+        .fg label{display:block;font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;letter-spacing:.4px;text-transform:uppercase}
+        .fi{width:100%;padding:14px 16px;background:var(--inp);border:1px solid var(--bdr);border-radius:var(--rs);color:var(--t1);font-family:'Sora',sans-serif;font-size:14px;transition:all .2s;outline:none}
+        .fi:focus{border-color:var(--red);box-shadow:0 0 0 3px var(--red-g)}.fi::placeholder{color:var(--t3)}
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:13px 22px;border-radius:var(--rs);font-family:'Sora',sans-serif;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:all .2s;text-decoration:none;letter-spacing:.3px}
+        .bp{background:linear-gradient(135deg,var(--red),var(--red-l));color:#fff;width:100%;box-shadow:0 4px 18px var(--red-g)}.bp:hover{transform:translateY(-2px);box-shadow:0 6px 28px var(--red-g)}.bp:active{transform:translateY(0)}
+        .bs{background:var(--card);color:var(--t1);border:1px solid var(--bdr)}.bs:hover{border-color:var(--bdr-h);background:var(--card-h)}
+        .bg{background:linear-gradient(135deg,#15803d,var(--grn));color:#fff;box-shadow:0 4px 18px var(--grn-g)}.bg:hover{transform:translateY(-2px)}
+        .bd{background:linear-gradient(135deg,#991b1b,#dc2626);color:#fff;box-shadow:0 4px 18px var(--red-g)}.bd:hover{transform:translateY(-2px)}
+        .bsm{padding:9px 16px;font-size:12px}
+        .bds{background:#450a0a;color:#fca5a5;border:1px solid #7f1d1d}.bds:hover{background:#7f1d1d}
+        .alnks{display:flex;justify-content:space-between;margin-top:20px;font-size:12px}
+        .alnks a{color:var(--t2);text-decoration:none;cursor:pointer;transition:color .2s}.alnks a:hover{color:var(--red-l)}
+        .aadm{text-align:center;margin-top:18px;padding-top:18px;border-top:1px solid var(--bdr)}
+        .aadm a{font-size:11px;color:var(--t3);text-decoration:none;cursor:pointer;transition:color .2s}.aadm a:hover{color:var(--t2)}
+        .aback{display:inline-flex;align-items:center;gap:5px;margin-bottom:18px;color:var(--t2);font-size:12px;cursor:pointer;transition:color .2s}.aback:hover{color:var(--t1)}
+        .dash{display:none;min-height:100vh}.dash.on{display:flex}
+        .side{width:var(--side);background:var(--bg2);border-right:1px solid var(--bdr);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .3s;overflow-y:auto}
+        .sh{padding:22px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;gap:12px}.sh img{width:180px;height:auto}.sh .sn{display:none}
+        .su{padding:16px 18px;border-bottom:1px solid var(--bdr)}.su .sun{font-size:13px;font-weight:600;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.su .sum{font-size:11px;color:var(--t3)}
+        .abadge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:16px;font-size:10px;font-weight:700;background:rgba(220,38,38,.12);color:var(--red-l);margin-top:5px}
+        .snav{flex:1;padding:14px 10px;display:flex;flex-direction:column;gap:3px}
+        .ni{display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:var(--rs);font-size:13px;font-weight:500;color:var(--t2);cursor:pointer;transition:all .2s;border:1px solid transparent}
+        .ni:hover{background:var(--card);color:var(--t1)}.ni.on{background:rgba(220,38,38,.08);color:var(--red-l);border-color:rgba(220,38,38,.15)}.ni i{width:18px;text-align:center;font-size:14px}
+        .sf{padding:14px 10px;border-top:1px solid var(--bdr)}.ni.lo{color:var(--t3)}.ni.lo:hover{color:var(--red-l);background:rgba(220,38,38,.06)}
+        .mc{flex:1;margin-left:var(--side);padding:32px 40px;min-height:100vh}
+        .ph{margin-bottom:28px}.ph h1{font-size:28px;font-weight:900;margin-bottom:4px}.ph p{font-size:13px;color:var(--t2)}
+        .tc{display:none;animation:fi .25s ease}.tc.on{display:block}
+        @keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        .card{background:linear-gradient(145deg, var(--card), #111);border:1px solid var(--bdr);border-radius:var(--r);padding:24px;transition:border-color .2s;box-shadow:0 4px 12px rgba(0,0,0,0.2)}.card:hover{border-color:var(--bdr-h)}
+        .ct{font-size:12px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:20px;display:flex;align-items:center;gap:8px}.ct i{color:var(--red)}
+        .sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+        .sc{background:linear-gradient(145deg, #161616, #111);border:1px solid var(--bdr);border-radius:var(--r);padding:16px 18px;display:flex;align-items:center;gap:14px;transition:all .2s;box-shadow:0 2px 6px rgba(0,0,0,0.2)}.sc:hover{border-color:var(--bdr-h);transform:translateY(-2px)}
+        .si{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+        .si.r{background:rgba(220,38,38,.1);color:var(--red-l)}.si.g{background:rgba(22,163,74,.1);color:var(--grn-l)}.si.a{background:rgba(245,158,11,.1);color:var(--amb-l)}.si.b{background:var(--blu-g);color:var(--blu-l)}
+        .sv{font-size:20px;font-weight:900;line-height:1}.sl{font-size:11px;color:var(--t2);margin-top:2px}
+        .cnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.cnav h3{font-size:17px;font-weight:700}
+        .cnav button{background:var(--card);border:1px solid var(--bdr);color:var(--t1);width:36px;height:36px;border-radius:var(--rs);cursor:pointer;font-size:13px;transition:all .2s}.cnav button:hover{border-color:var(--bdr-h);background:var(--card-h)}
+        .cg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+        .ch{text-align:center;font-size:10px;font-weight:700;color:var(--t3);padding:4px 0;text-transform:uppercase}
+        .cd{aspect-ratio:auto;height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;font-size:12px;font-weight:500;position:relative;cursor:default;transition:all .15s;border:1px solid transparent}
+        .cd.em{background:transparent}.cd.tw{background:rgba(22,163,74,.05);border-color:rgba(22,163,74,.1);color:var(--grn-l)}.cd.fl{background:rgba(220,38,38,.07);border-color:rgba(220,38,38,.12);color:var(--red-l)}
+        .cd.fl::after{content:'F';font-size:7px;font-weight:800;position:absolute;bottom:2px}.cd.tw::after{content:'T';font-size:7px;font-weight:800;position:absolute;bottom:2px;opacity:.4}
+        .cd.td{box-shadow:0 0 0 2px var(--red)}.cd.bf{opacity:.15}.cd.he::before{content:'';position:absolute;top:2px;right:2px;width:4px;height:4px;border-radius:50%;background:var(--amb-l)}
+        .clg{display:flex;gap:16px;margin-top:16px;font-size:11px;color:var(--t2);flex-wrap:wrap}.clg span{display:flex;align-items:center;gap:5px}
+        .ld{width:10px;height:10px;border-radius:3px}.ld.tw{background:rgba(22,163,74,.2);border:1px solid rgba(22,163,74,.4)}.ld.fl{background:rgba(220,38,38,.2);border:1px solid rgba(220,38,38,.4)}.ld.td{background:transparent;border:2px solid var(--red)}.ld.he{background:var(--amb-l);border-radius:50%;width:7px;height:7px}
+        .otf{display:flex;gap:12px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap}.otf .fg{margin-bottom:0;flex:1;min-width:130px}.otf .btn{height:48px;white-space:nowrap}
+        .ot{width:100%;border-collapse:collapse}
+        .ot th{text-align:left;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;padding:12px 14px;border-bottom:1px solid var(--bdr);background:rgba(255,255,255,.02)}.ot td{padding:14px;border-bottom:1px solid var(--bdr);font-size:13px}.ot tr:hover td{background:rgba(255,255,255,.02)}
+        .dbtn{background:none;border:none;color:var(--t3);cursor:pointer;font-size:13px;padding:5px 8px;border-radius:6px;transition:all .2s}.dbtn:hover{color:var(--red-l);background:rgba(220,38,38,.1)}
+        .es{text-align:center;padding:40px 16px;color:var(--t3)}.es i{font-size:36px;margin-bottom:10px;display:block}.es p{font-size:13px}
+        .sag{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+        .sd{margin-bottom:14px}.sd .sdl{font-size:12px;color:var(--t2);margin-bottom:3px}.sd .sdv{font-size:20px;font-weight:800}
+        .sd .sdv.g{color:var(--grn-l)}.sd .sdv.a{color:var(--amb-l)}.sd .sdv.b{color:var(--blu-l)}.sd .sdv.r{color:var(--red-l)}
+        .sbar{height:10px;border-radius:5px;background:var(--inp);overflow:hidden;margin-top:10px;margin-bottom:4px}.sbf{height:100%;border-radius:5px;transition:width .8s ease}
+        .sbf.base{background:linear-gradient(90deg,var(--grn),var(--grn-l))}.sbf.semana{background:linear-gradient(90deg,#1d4ed8,var(--blu-l))}.sbf.fds{background:linear-gradient(90deg,#92400e,var(--amb-l))}
+        .sdiv{height:1px;background:var(--bdr);margin:22px 0}
+        .at{width:100%;border-collapse:collapse}
+        .at th{text-align:left;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;padding:12px 14px;border-bottom:1px solid var(--bdr);background:rgba(255,255,255,.02)}.at td{padding:14px;border-bottom:1px solid var(--bdr);font-size:13px}.at tr:hover td{background:rgba(255,255,255,.02)}
+        .mo{display:none;position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);align-items:center;justify-content:center}.mo.on{display:flex}
+        .md{background:linear-gradient(145deg, var(--card), #111);border:1px solid var(--bdr);border-radius:18px;padding:32px;max-width:540px;width:92%;animation:cIn .3s ease;max-height:85vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,0.5)}
+        .md h2{font-size:18px;font-weight:800;margin-bottom:4px}.md .msub{font-size:12px;color:var(--t2);margin-bottom:20px}.mact{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+        .mh{display:none;position:fixed;top:0;left:0;right:0;z-index:99;background:var(--bg2);border-bottom:1px solid var(--bdr);padding:10px 14px;align-items:center;justify-content:space-between}
+        .mh .mhl{display:flex;align-items:center;gap:8px}.mh .mhl img{height:38px;width:auto}.mh .mhl span{display:none}
+        .ham{background:none;border:none;color:var(--t1);font-size:20px;cursor:pointer;padding:4px}
+        .sov{display:none;position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.55)}.sov.on{display:block}
+        .tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;font-size:10px;font-weight:700}
+        .tag-semana{background:var(--blu-g);color:var(--blu-l)}.tag-fds{background:var(--amb-g);color:var(--amb-l)}.tag-vt{background:var(--grn-g);color:var(--grn-l)}.tag-nvt{background:rgba(245,158,11,.1);color:var(--amb-l)}
+        .tag-falta{background:rgba(220,38,38,.12);color:var(--red-l)}.tag-atraso{background:rgba(245,158,11,.1);color:var(--amb-l)}
+        .vt-wrap{display:flex;align-items:center;gap:12px;padding:16px 18px;background:var(--inp);border:1px solid var(--bdr);border-radius:var(--rs);cursor:pointer;transition:all .2s;user-select:none}
+        .vt-wrap:hover{border-color:var(--bdr-h)}.vt-wrap.active{border-color:rgba(22,163,74,.3);background:rgba(22,163,74,.04)}
+        .vt-toggle{width:44px;height:24px;border-radius:12px;background:var(--bdr-h);position:relative;transition:background .25s;flex-shrink:0}.vt-toggle.on{background:var(--grn)}
+        .vt-toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .25s;box-shadow:0 1px 4px rgba(0,0,0,.3)}.vt-toggle.on::after{transform:translateX(20px)}
+        .vt-info{flex:1}.vt-info .vt-titulo{font-size:13px;font-weight:600;color:var(--t1)}.vt-info .vt-desc{font-size:11px;color:var(--t3);margin-top:2px}
+        .vt-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px}
+        .folga-sel{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+        .folga-sel label{font-size:13px;color:var(--t2);font-weight:500}
+        .folga-sel select,.folga-sel input[type="number"]{background:var(--inp);border:1px solid var(--bdr);color:var(--t1);padding:10px 14px;border-radius:var(--rs);font-family:'Sora',sans-serif;font-size:13px;outline:none}
+        .folga-sel select:focus,.folga-sel input[type="number"]{border-color:var(--red)}
+        .folga-sel select{min-width:160px}.folga-sel input[type="number"]{width:100px}
+        .folga-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+        .folga-card{display:flex;align-items:center;gap:12px;padding:14px 16px;background:linear-gradient(135deg, rgba(220,38,38,0.03), var(--inp));border:1px solid var(--bdr);border-left:3px solid var(--red-l);border-radius:10px;transition:all .2s}
+        .folga-card:hover{border-color:rgba(220,38,38,0.2);transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,0.2)}
+        .folga-icon{width:36px;height:36px;border-radius:8px;background:rgba(220,38,38,.1);color:var(--red-l);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+        .folga-data{font-size:15px;font-weight:700;color:var(--t1)}.folga-dia{font-size:10px;color:var(--t2);margin-top:2px;text-transform:uppercase;letter-spacing:0.5px}
+        .folga-count{margin-bottom:14px;font-size:13px;color:var(--t2);font-weight:500}.folga-count strong{color:var(--red-l);font-size:16px}
+        .tipo-sel{display:flex;gap:8px;margin-bottom:18px}
+        .tipo-btn{padding:12px 20px;border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;border:2px solid var(--bdr);background:var(--inp);color:var(--t2);font-family:'Sora',sans-serif}
+        .tipo-btn:hover{border-color:var(--bdr-h)}.tipo-btn.on-falta{border-color:var(--red);background:rgba(220,38,38,.08);color:var(--red-l)}
+        .tipo-btn.on-atraso{border-color:var(--amb);background:var(--amb-g);color:var(--amb-l)}
+        .horas-field{display:none;margin-bottom:18px}.horas-field.vis{display:block}
+        @media(max-width:768px){.mh{display:flex}.side{transform:translateX(-100%)}.side.open{transform:translateX(0)}.mc{margin-left:0;padding:72px 14px 20px}.sag{grid-template-columns:1fr}.otf{flex-direction:column}.otf .btn{width:100%}.sg{grid-template-columns:1fr 1fr}.acard{padding:30px 22px}.at th,.at td{padding:8px 6px;font-size:11px}.folga-grid{grid-template-columns:1fr}}
+        @media(max-width:420px){.sg{grid-template-columns:1fr}}
+        ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--bdr-h);border-radius:3px}
+        .pg{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:500px){.pg{grid-template-columns:1fr}}
+        .pr{padding:14px 16px;background:var(--inp);border:1px solid var(--bdr);border-radius:var(--rs);font-size:14px;color:var(--t2)}
+        .msel{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+        .msel select{background:var(--inp);border:1px solid var(--bdr);color:var(--t1);padding:10px 14px;border-radius:var(--rs);font-family:'Sora',sans-serif;font-size:13px;outline:none}.msel select:focus{border-color:var(--red)}
+        .fb{display:flex;justify-content:space-between;align-items:center}
+        .mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}.mb14{margin-bottom:14px}
+        .tm{color:var(--t3)}.ts{font-size:12px}
+    </style>
+</head>
+<body>
+<div id="toasts"></div>
+<div id="loading"><div class="spinner"></div></div>
+
+<div id="pg-login" class="ap on"><div class="abg"></div><div class="acard"><div class="alogo"><img id="l-logo" src="" alt="Logo"><div class="cn" id="l-nome">FVB</div></div><h2 class="atit">Acesso do Funcionario</h2><p class="asub">Insira sua matricula para acessar o sistema</p><div class="fg"><label>Matricula</label><input type="text" id="i-lmat" class="fi" placeholder="Digite sua matricula" autocomplete="off" inputmode="numeric"></div><button class="btn bp" onclick="doLogin()"><i class="fas fa-sign-in-alt"></i> Entrar</button><div class="alnks"><a onclick="go('pg-reg')"><i class="fas fa-user-plus"></i> Criar conta</a></div><div class="aadm"><a onclick="go('pg-adm')"><i class="fas fa-shield-halved"></i> Acesso administrativo</a></div></div></div>
+
+<div id="pg-reg" class="ap"><div class="abg"></div><div class="acard"><div class="aback" onclick="go('pg-login')"><i class="fas fa-arrow-left"></i> Voltar</div><div class="alogo"><img id="r-logo" src="" alt="Logo"><div class="cn" id="r-nome">FVB</div></div><h2 class="atit">Criar Conta</h2><p class="asub">Preencha seus dados para o primeiro acesso</p><div class="fg"><label>Nome Completo</label><input type="text" id="i-rnome" class="fi" placeholder="Seu nome completo" autocomplete="off"></div><div class="fg"><label>Matricula</label><input type="text" id="i-rmat" class="fi" placeholder="Sua matricula" autocomplete="off" inputmode="numeric"></div><button class="btn bp" onclick="doRegister()"><i class="fas fa-check"></i> Cadastrar</button></div></div>
+
+<div id="pg-adm" class="ap"><div class="abg"></div><div class="acard"><div class="aback" onclick="go('pg-login')"><i class="fas fa-arrow-left"></i> Voltar</div><div style="text-align:center;margin-bottom:20px"><i class="fas fa-shield-halved" style="font-size:36px;color:var(--red)"></i></div><h2 class="atit">Acesso Administrativo</h2><p class="asub">Apenas administradores autorizados</p><div class="fg"><label>Login</label><input type="text" id="i-alog" class="fi" placeholder="Login" autocomplete="off"></div><div class="fg"><label>Senha</label><input type="password" id="i-asen" class="fi" placeholder="Senha" autocomplete="off"></div><button class="btn bp" onclick="doAdminLogin()"><i class="fas fa-lock-open"></i> Entrar como Admin</button></div></div>
+
+<div id="ds-emp" class="dash">
+    <div class="mh"><div class="mhl"><img id="m-logo" src="" alt=""><span id="m-nome">FVB</span></div><button class="ham" onclick="togSide()"><i class="fas fa-bars"></i></button></div>
+    <div class="sov" id="sov1" onclick="togSide()"></div>
+    <aside class="side" id="side1">
+        <div class="sh"><img id="s1-logo" src="" alt=""><span class="sn" id="s1-nome">FVB</span></div>
+        <div class="su"><div class="sun" id="e-uname">—</div><div class="sum" id="e-umat">Matricula: —</div></div>
+        <nav class="snav">
+            <div class="ni on" onclick="eTab('t-perf',this)"><i class="fas fa-user"></i> Meu Perfil</div>
+            <div class="ni" onclick="eTab('t-esc',this)"><i class="fas fa-calendar-days"></i> Escala 6x2</div>
+            <div class="ni" onclick="eTab('t-he',this)"><i class="fas fa-clock"></i> Horas Extras</div>
+            <div class="ni" onclick="eTab('t-abs',this)"><i class="fas fa-user-xmark"></i> Faltas/Atrasos</div>
+            <div class="ni" onclick="eTab('t-sal',this)"><i class="fas fa-wallet"></i> Salario</div>
+        </nav>
+        <div class="sf"><div class="ni lo" onclick="doLogout()"><i class="fas fa-right-from-bracket"></i> Sair</div></div>
+    </aside>
+    <main class="mc">
+        <div id="t-perf" class="tc on">
+            <div class="ph"><h1>Meu Perfil</h1><p>Gerencie suas informacoes</p></div>
+            <div class="card"><div class="ct"><i class="fas fa-id-card"></i> Dados do Funcionario</div>
+                <div class="pg"><div class="fg"><label>Nome</label><div class="pr" id="p-nome">—</div></div><div class="fg"><label>Matricula</label><div class="pr" id="p-mat">—</div></div>
+                <div class="fg"><label>Data de Entrada</label><input type="date" id="p-data" class="fi" onchange="saveProf()"></div>
+                <div class="fg"><label>Salario Base (R$)</label><input type="number" id="p-sal" class="fi" placeholder="3000.00" step="0.01" min="0" onchange="saveProf()"></div>
+                <div class="fg"><label>HE Dias Uteis (%)</label><input type="number" id="p-taxa1" class="fi" placeholder="50" step="1" min="0" max="200" onchange="saveProf()"></div>
+                <div class="fg"><label>HE Sab/Dom/Feriado (%)</label><input type="number" id="p-taxa2" class="fi" placeholder="100" step="1" min="0" max="200" onchange="saveProf()"></div></div>
+            </div>
+            <div class="sdiv"></div>
+            <div class="fg"><label>Vale-Transporte</label><div class="vt-wrap" id="vt-wrap" onclick="toggleVT()"><div class="vt-toggle on" id="vt-toggle"></div><div class="vt-info"><div class="vt-titulo" id="vt-titulo">Recebe VT — desconto de 6%</div><div class="vt-desc" id="vt-desc">Desconto de 6% sobre o salario base</div></div><span class="vt-badge tag-vt" id="vt-badge">VT</span></div></div>
+            <div class="sdiv"></div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap">
+                <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span class="tag tag-semana"><i class="fas fa-briefcase"></i> 50%</span><span class="tm">Dias uteis</span></div>
+                <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span class="tag tag-fds"><i class="fas fa-umbrella-beach"></i> 100%</span><span class="tm">Sab/Dom/Feriado</span></div>
+                <div style="display:flex;align-items:center;gap:6px;font-size:12px"><span class="tag tag-vt"><i class="fas fa-bus"></i> 6%</span><span class="tm">Desconto VT</span></div>
+            </div>
+        </div>
+
+        <div id="t-esc" class="tc">
+            <div class="ph"><h1>Escala 6x2</h1><p>Visualize seus dias de trabalho e folga</p></div>
+            <div id="esc-nodata" class="card" style="display:none"><div class="es"><i class="fas fa-calendar-xmark"></i><p>Configure sua data de entrada no perfil.</p></div></div>
+            <div id="esc-data" style="display:none">
+                <div class="sg" id="esc-stats"></div>
+                <div class="card mb14"><div class="cnav"><button onclick="cCal(-1)"><i class="fas fa-chevron-left"></i></button><h3 id="cal-lbl">—</h3><button onclick="cCal(1)"><i class="fas fa-chevron-right"></i></button></div><div class="cg" id="cal-g"></div><div class="clg"><span><span class="ld tw"></span>Trabalho</span><span><span class="ld fl"></span>Folga</span><span><span class="ld td"></span>Hoje</span><span><span class="ld he"></span>Hora Extra</span></div></div>
+                <div class="card"><div class="ct"><i class="fas fa-umbrella-beach"></i> Folgas por Mes</div><div class="folga-sel"><label>Ano:</label><input type="number" id="folga-ano" min="2020" max="2099" value=""><label>Mes:</label><select id="folga-mes"></select><button class="btn bg bsm" onclick="renFolgas()" style="padding:10px 16px"><i class="fas fa-search"></i> Buscar</button></div><div id="folga-list"></div></div>
+            </div>
+        </div>
+
+        <div id="t-he" class="tc">
+            <div class="ph"><h1>Horas Extras</h1><p>Registre e acompanhe suas horas extras</p></div>
+            <div id="he-nosal" class="card" style="display:none"><div class="es"><i class="fas fa-coins"></i><p>Configure seu salario base no perfil.</p></div></div>
+            <div id="he-data"><div class="sg" id="he-stats"></div><div class="card"><div class="ct"><i class="fas fa-plus-circle"></i> Adicionar Hora Extra</div><div class="otf"><div class="fg"><label>Data</label><input type="date" id="he-d" class="fi"></div><div class="fg"><label>Horas</label><input type="number" id="he-h" class="fi" placeholder="2.5" step="0.5" min="0.5" max="12"></div><button class="btn bg bsm" onclick="addHE()" style="align-self:flex-end"><i class="fas fa-plus"></i> Adicionar</button></div><div class="sdiv"></div><div class="msel"><label class="ts" style="color:var(--t2)">Filtrar:</label><select id="he-f" onchange="renHE()"><option value="current">Mes Atual</option><option value="last">Mes Passado</option><option value="all">Todos</option></select></div><div id="he-tbl"></div></div></div>
+        </div>
+
+        <div id="t-abs" class="tc">
+            <div class="ph"><h1>Faltas e Atrasos</h1><p>Registre faltas e atrasos — descontados no salario</p></div>
+            <div id="abs-nosal" class="card" style="display:none"><div class="es"><i class="fas fa-coins"></i><p>Configure seu salario base no perfil.</p></div></div>
+            <div id="abs-data">
+                <div class="sg" id="abs-stats"></div>
+                <div class="card"><div class="ct"><i class="fas fa-plus-circle"></i> Registrar Falta ou Atraso</div>
+                    <div class="tipo-sel">
+                        <button class="tipo-btn on-falta" id="tb-falta" onclick="setAbsTipo('falta')"><i class="fas fa-user-xmark"></i> Falta</button>
+                        <button class="tipo-btn" id="tb-atraso" onclick="setAbsTipo('atraso')"><i class="fas fa-clock"></i> Atraso</button>
+                    </div>
+                    <div class="otf">
+                        <div class="fg"><label>Data</label><input type="date" id="abs-d" class="fi"></div>
+                        <div class="fg horas-field" id="abs-horas-wrap"><label>Horas de Atraso</label><input type="number" id="abs-h" class="fi" placeholder="2" step="0.5" min="0.5" max="12"></div>
+                        <button class="btn bd bsm" onclick="addAbs()" style="align-self:flex-end"><i class="fas fa-plus"></i> Registrar</button>
+                    </div>
+                    <div class="sdiv"></div>
+                    <div class="msel"><label class="ts" style="color:var(--t2)">Filtrar:</label><select id="abs-f" onchange="renAbs()"><option value="current">Mes Atual</option><option value="last">Mes Passado</option><option value="all">Todos</option></select></div>
+                    <div id="abs-tbl"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="t-sal" class="tc">
+            <div class="ph"><h1>Salario Mensal</h1><p>Resumo da sua remuneracao</p></div>
+            <div id="sal-nodata" class="card" style="display:none"><div class="es"><i class="fas fa-wallet"></i><p>Configure seu salario base no perfil.</p></div></div>
+            <div id="sal-data" style="display:none"><div class="msel"><label class="ts" style="color:var(--t2)">Mes:</label><select id="sal-f" onchange="renSal()"><option value="current">Mes Atual</option><option value="last">Mes Passado</option></select></div><div class="sg" id="sal-stats"></div><div class="sag"><div class="card"><div class="ct"><i class="fas fa-receipt"></i> Detalhamento</div><div id="sal-det"></div></div><div class="card"><div class="ct"><i class="fas fa-chart-bar"></i> Composicao</div><div id="sal-chart"></div></div></div></div>
+        </div>
+    </main>
+</div>
+
+<div id="ds-adm" class="dash">
+    <div class="mh"><div class="mhl"><img id="ma-logo" src="" alt=""><span>Admin</span></div><button class="ham" onclick="togSide()"><i class="fas fa-bars"></i></button></div>
+    <div class="sov" id="sov2" onclick="togSide()"></div>
+    <aside class="side" id="side2">
+        <div class="sh"><img id="s2-logo" src="" alt=""><span class="sn" id="s2-nome">FVB</span></div>
+        <div class="su"><div class="sun">Administrador</div><div class="abadge"><i class="fas fa-crown"></i> Admin</div></div>
+        <nav class="snav"><div class="ni on" onclick="aTab('a-func',this)"><i class="fas fa-users"></i> Funcionarios</div><div class="ni" onclick="aTab('a-cfg',this)"><i class="fas fa-gear"></i> Configuracoes</div></nav>
+        <div class="sf"><div class="ni lo" onclick="doLogout()"><i class="fas fa-right-from-bracket"></i> Sair</div></div>
+    </aside>
+    <main class="mc">
+        <div id="a-func" class="tc on"><div class="ph"><h1>Funcionarios</h1><p>Gerencie os funcionarios</p></div><div class="sg" id="adm-stats"></div><div class="card"><div id="adm-tbl"></div></div></div>
+        <div id="a-cfg" class="tc"><div class="ph"><h1>Configuracoes</h1><p>Nome, logo e regras da folha</p></div><div class="card"><div class="ct"><i class="fas fa-building"></i> Dados da Empresa</div><div class="pg"><div class="fg"><label>Nome</label><input type="text" id="cfg-n" class="fi" placeholder="Nome"></div><div class="fg"><label>URL da Logo</label><input type="text" id="cfg-l" class="fi" placeholder="https://..."></div></div><div class="mt16"><label class="ts" style="color:var(--t2);display:block;margin-bottom:6px">Preview</label><img id="cfg-pv" src="" alt="" style="max-width:140px;border-radius:8px;border:1px solid var(--bdr)"></div><div class="sdiv"></div><div class="ct"><i class="fas fa-calendar-check"></i> Regras da Folha</div><div class="pg"><div class="fg"><label>Dia Fechamento Folha</label><input type="number" id="cfg-fechamento" class="fi" placeholder="25" min="1" max="31"></div><div class="fg"><label>Dia Pagamento (Dias Uteis)</label><input type="number" id="cfg-pagamento" class="fi" placeholder="5" min="1" max="31"></div></div><div class="mt20"><button class="btn bg" onclick="saveCfg()"><i class="fas fa-save"></i> Salvar</button></div></div></div></div>
+    </main>
+</div>
+
+<div class="mo" id="mo-det"><div class="md"><h2 id="md-name">—</h2><p class="msub" id="md-mat">—</p><div id="md-body"></div><div class="mact"><button class="btn bs bsm" onclick="cMo('mo-det')">Fechar</button></div></div></div>
+<div class="mo" id="mo-del"><div class="md"><h2>Confirmar Exclusao</h2><p class="msub">Tem certeza?</p><div class="mact"><button class="btn bs bsm" onclick="cMo('mo-del')">Cancelar</button><button class="btn bds bsm" id="del-btn">Excluir</button></div></div></div>
+
+<script>
+const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DIAS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const DEF_LOGO='/logo.png';
+let empData=null,calY=new Date().getFullYear(),calM=new Date().getMonth(),heCache=[],absCache=[],vtAtivo=true,absTipo='falta';
+
+async function api(p,o={}){const r=await fetch('/api'+p,{headers:{'Content-Type':'application/json'},credentials:'same-origin',...o});const d=await r.json();if(!r.ok)throw new Error(d.erro||'Erro');return d;}
+function toast(m,t='ok'){const c=document.getElementById('toasts'),e=document.createElement('div');e.className='toast '+t;const i={ok:'fa-check-circle',err:'fa-times-circle',warn:'fa-exclamation-triangle'};e.innerHTML='<i class="fas '+(i[t]||i.ok)+'"></i> '+m;c.appendChild(e);setTimeout(()=>{e.classList.add('out');setTimeout(()=>e.remove(),250);},3200);}
+function showLoad(v){document.getElementById('loading').classList.toggle('on',v);}
+function go(id){document.querySelectorAll('.ap,.dash').forEach(e=>e.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function togSide(){document.querySelectorAll('.side').forEach(s=>s.classList.toggle('open'));document.querySelectorAll('.sov').forEach(o=>o.classList.toggle('on'));}
+function eTab(id,el){document.querySelectorAll('#ds-emp .tc').forEach(t=>t.classList.remove('on'));document.querySelectorAll('#ds-emp .ni').forEach(n=>n.classList.remove('on'));document.getElementById(id).classList.add('on');if(el)el.classList.add('on');if(window.innerWidth<=768)togSide();if(id==='t-esc')renEsc();if(id==='t-he')renHE();if(id==='t-abs')renAbs();if(id==='t-sal')renSal();}
+function aTab(id,el){document.querySelectorAll('#ds-adm .tc').forEach(t=>t.classList.remove('on'));document.querySelectorAll('#ds-adm .ni').forEach(n=>n.classList.remove('on'));document.getElementById(id).classList.add('on');if(el)el.classList.add('on');if(window.innerWidth<=768)togSide();if(id==='a-func')renAdmEmp();if(id==='a-cfg')renAdmCfg();}
+function oMo(id){document.getElementById(id).classList.add('on');}function cMo(id){document.getElementById(id).classList.remove('on');}
+document.querySelectorAll('.mo').forEach(o=>{o.addEventListener('click',function(e){if(e.target===this)this.classList.remove('on');});});
+
+async function checkSession(){try{const d=await api('/auth/me');if(d.type==='employee'){enterEmp(d.user);return;}if(d.type==='admin'){enterAdm();return;}}catch{}go('pg-login');loadCompany();}
+async function loadCompany(){try{const c=await api('/admin/company');const ids=['l-logo','r-logo','m-logo','s1-logo','s2-logo','ma-logo'];ids.forEach(id=>{const el=document.getElementById(id);if(el)el.src=c.logo_url||DEF_LOGO;});const nms=['l-nome','r-nome','m-nome','s1-nome','s2-nome'];nms.forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=c.nome||'FVB';});document.getElementById('cfg-pv').src=c.logo_url||DEF_LOGO;}catch{}}
+
+async function doLogin(){const m=document.getElementById('i-lmat').value.trim();if(!m){toast('Digite sua matricula','err');return;}showLoad(true);try{const d=await api('/auth/login',{method:'POST',body:JSON.stringify({matricula:m})});enterEmp(d.user);document.getElementById('i-lmat').value='';}catch(e){toast(e.message,'err');}showLoad(false);}
+async function doRegister(){const n=document.getElementById('i-rnome').value.trim(),m=document.getElementById('i-rmat').value.trim();if(!n||n.length<3){toast('Nome obrigatorio','err');return;}if(!m||!/^\d+$/.test(m)){toast('Matricula: apenas numeros','err');return;}showLoad(true);try{const d=await api('/auth/register',{method:'POST',body:JSON.stringify({nome:n,matricula:m})});enterEmp(d.user);}catch(e){toast(e.message,'err');}showLoad(false);}
+async function doAdminLogin(){const l=document.getElementById('i-alog').value.trim(),s=document.getElementById('i-asen').value;if(!l||!s){toast('Preencha login e senha','err');return;}showLoad(true);try{await api('/auth/admin-login',{method:'POST',body:JSON.stringify({login:l,senha:s})});document.getElementById('i-alog').value='';document.getElementById('i-asen').value='';enterAdm();}catch(e){toast(e.message,'err');}showLoad(false);}
+async function doLogout(){try{await api('/auth/logout',{method:'POST'});}catch{}empData=null;go('pg-login');document.querySelectorAll('.side').forEach(s=>s.classList.remove('open'));document.querySelectorAll('.sov').forEach(o=>o.classList.remove('on'));}
+
+async function enterEmp(u){go('ds-emp');document.getElementById('e-uname').textContent=u.nome;document.getElementById('e-umat').textContent='Matricula: '+u.matricula;showLoad(true);try{empData=await api('/employee/profile');document.getElementById('p-nome').textContent=empData.nome;document.getElementById('p-mat').textContent=empData.matricula;document.getElementById('p-data').value=empData.data_entrada||'';document.getElementById('p-sal').value=empData.salario_base||'';document.getElementById('p-taxa1').value=empData.taxa_he_semana!=null?empData.taxa_he_semana:50;document.getElementById('p-taxa2').value=empData.taxa_he_fds_feriado!=null?empData.taxa_he_fds_feriado:100;setVTToggle(empData.recebe_vt!==false);}catch(e){toast('Erro ao carregar','err');}showLoad(false);eTab('t-perf',document.querySelector('#ds-emp .ni'));}
+function enterAdm(){go('ds-adm');aTab('a-func',document.querySelector('#ds-adm .ni'));}
+
+function setVTToggle(on){vtAtivo=on;const t=document.getElementById('vt-toggle'),w=document.getElementById('vt-wrap'),ti=document.getElementById('vt-titulo'),de=document.getElementById('vt-desc'),b=document.getElementById('vt-badge');t.classList.toggle('on',on);w.classList.toggle('active',on);if(on){ti.textContent='Recebe VT — desconto de 6%';de.textContent='Desconto de 6% sobre o salario base';b.className='vt-badge tag-vt';b.textContent='VT';}else{ti.textContent='Cond. Propria — sem desconto';de.textContent='Sem desconto de VT';b.className='vt-badge tag-nvt';b.textContent='PROPRIO';}}
+function toggleVT(){setVTToggle(!vtAtivo);saveProf();}
+
+async function saveProf(){showLoad(true);try{await api('/employee/profile',{method:'PUT',body:JSON.stringify({nome:document.getElementById('p-nome').textContent,data_entrada:document.getElementById('p-data').value,salario_base:parseFloat(document.getElementById('p-sal').value)||0,taxa_he_semana:parseFloat(document.getElementById('p-taxa1').value)||50,taxa_he_fds_feriado:parseFloat(document.getElementById('p-taxa2').value)||100,recebe_vt:vtAtivo})});empData.data_entrada=document.getElementById('p-data').value;empData.salario_base=parseFloat(document.getElementById('p-sal').value)||0;empData.taxa_he_semana=parseFloat(document.getElementById('p-taxa1').value)||50;empData.taxa_he_fds_feriado=parseFloat(document.getElementById('p-taxa2').value)||100;empData.recebe_vt=vtAtivo;toast('Perfil atualizado');}catch(e){toast(e.message,'err');}showLoad(false);}
+
+function parseD(s){if(!s)return null;const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
+function fmtBR(s){if(!s)return'—';const[y,m,d]=s.split('-');return d+'/'+m+'/'+y;}
+function getMF(f){const v=document.getElementById(f).value,n=new Date();if(v==='current')return{m:n.getMonth(),y:n.getFullYear()};if(v==='last'){let m=n.getMonth()-1,y=n.getFullYear();if(m<0){m=11;y--;}return{m,y};}return null;}
+function mfToStr(mf){return mf.y+'-'+String(mf.m+1).padStart(2,'0');}
+function dayStatus(ds,entry){const d=parseD(ds),e=parseD(entry);if(!d||!e)return'bf';const diff=Math.floor((d.getTime()-e.getTime())/864e5);if(diff<0)return'bf';return(diff%8>=6)?'fl':'tw';}
+
+function popMesSel(){const sel=document.getElementById('folga-mes');sel.innerHTML='';const now=new Date();MESES.forEach((nome,i)=>{const opt=document.createElement('option');opt.value=i;opt.textContent=nome;if(i===now.getMonth())opt.selected=true;sel.appendChild(opt);});document.getElementById('folga-ano').value=now.getFullYear();}
+
+function renEsc(){if(!empData||!empData.data_entrada){document.getElementById('esc-nodata').style.display='block';document.getElementById('esc-data').style.display='none';return;}document.getElementById('esc-nodata').style.display='none';document.getElementById('esc-data').style.display='block';const td=new Date();td.setHours(0,0,0,0);const tds=td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');const st=dayStatus(tds,empData.data_entrada);let dw=0,df=0;const ck=new Date(parseD(empData.data_entrada));while(ck<=td){const ds=ck.getFullYear()+'-'+String(ck.getMonth()+1).padStart(2,'0')+'-'+String(ck.getDate()).padStart(2,'0');dayStatus(ds,empData.data_entrada)==='fl'?df++:dw++;ck.setDate(ck.getDate()+1);}document.getElementById('esc-stats').innerHTML=`<div class="sc"><div class="si ${st==='fl'?'r':'g'}"><i class="fas ${st==='fl'?'fa-umbrella-beach':'fa-briefcase'}"></i></div><div><div class="sv">${st==='fl'?'Folga':'Trabalho'}</div><div class="sl">Hoje</div></div></div><div class="sc"><div class="si g"><i class="fas fa-briefcase"></i></div><div><div class="sv">${dw}</div><div class="sl">Trab.</div></div></div><div class="sc"><div class="si r"><i class="fas fa-umbrella-beach"></i></div><div><div class="sv">${df}</div><div class="sl">Folgas</div></div></div><div class="sc"><div class="si a"><i class="fas fa-calendar"></i></div><div><div class="sv">${dw+df}</div><div class="sl">Total</div></div></div>`;renCal();popMesSel();renFolgas();}
+function renCal(){const g=document.getElementById('cal-g');g.innerHTML='';document.getElementById('cal-lbl').textContent=MESES[calM]+' '+calY;DIAS.forEach(d=>{const e=document.createElement('div');e.className='ch';e.textContent=d;g.appendChild(e);});const fd=new Date(calY,calM,1).getDay(),dim=new Date(calY,calM+1,0).getDate();const td=new Date();td.setHours(0,0,0,0);for(let i=0;i<fd;i++){const e=document.createElement('div');e.className='cd em';g.appendChild(e);}const heMap={};heCache.forEach(r=>{const[y,m]=r.data.split('-').map(Number);if(y===calY&&m===calM+1)heMap[r.data]=r.horas;});for(let d=1;d<=dim;d++){const ds=calY+'-'+String(calM+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');const st=dayStatus(ds,empData.data_entrada);const e=document.createElement('div');e.className='cd '+st;const cd=new Date(calY,calM,d);if(cd.getTime()===td.getTime())e.classList.add('td');if(heMap[ds])e.classList.add('he');e.textContent=d;g.appendChild(e);}}
+function cCal(dir){calM+=dir;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}if(empData){document.getElementById('folga-ano').value=calY;document.getElementById('folga-mes').value=calM;renCal();renFolgas();}}
+async function renFolgas(){
+    const ano=parseInt(document.getElementById('folga-ano').value),mes=parseInt(document.getElementById('folga-mes').value),c=document.getElementById('folga-list');
+    if(isNaN(ano)||ano<2020||ano>2099||isNaN(mes)){c.innerHTML='<div class="es"><i class="fas fa-exclamation-triangle"></i><p>Ano valido (2020-2099) e selecione o mes.</p></div>';return;}
+    if(!empData||!empData.data_entrada){c.innerHTML='<div class="es"><i class="fas fa-calendar-xmark"></i><p>Configure sua data de entrada.</p></div>';return;}
+    if(calY!==ano||calM!==mes){calY=ano;calM=mes;renCal();}
+    showLoad(true);
+    try{
+        const folgas=await api('/employee/folgas?ano='+ano+'&mes='+mes);
+        showLoad(false);
+        if(!folgas.length){c.innerHTML='<div class="es"><i class="fas fa-calendar-check"></i><p>Nenhuma folga em '+MESES[mes]+' '+ano+'.</p></div>';return;}
+        let h='<div class="folga-count">Encontradas <strong>'+folgas.length+'</strong> folga'+(folgas.length>1?'s':'')+'</div><div class="folga-grid">';
+        folgas.forEach(f=>{h+=`<div class="folga-card"><div class="folga-icon"><i class="fas fa-umbrella-beach"></i></div><div><div class="folga-data">${f.dataBR}</div><div class="folga-dia">${f.diaSemana}</div></div></div>`;});
+        h+='</div>';c.innerHTML=h;
+    }catch(e){showLoad(false);c.innerHTML='<p class="ts tm">Erro ao carregar.</p>';}
+}
+
+function heTag(t){return t==='fds_feriado'?'<span class="tag tag-fds"><i class="fas fa-umbrella-beach"></i> 100%</span>':'<span class="tag tag-semana"><i class="fas fa-briefcase"></i> 50%</span>';}
+function absTag(t){return t==='falta'?'<span class="tag tag-falta"><i class="fas fa-user-xmark"></i> Falta</span>':'<span class="tag tag-atraso"><i class="fas fa-clock"></i> Atraso</span>';}
+
+async function renHE(){
+    if(!empData)return;
+    const mf=getMF('he-f');const ms=mf?mfToStr(mf):'all';
+    showLoad(true);
+    try{heCache=await api('/employee/overtime?mes='+ms);}catch(e){heCache=[];}
+    showLoad(false);
+    let tH=0,hS=0,hF=0;
+    heCache.forEach(r=>{tH+=r.horas;if(r.tipo==='fds_feriado')hF+=r.horas;else hS+=r.horas;});
+    const vh=empData.salario_base?empData.salario_base/220:0;
+    const vS=vh*(1+(empData.taxa_he_semana||50)/100),vF=vh*(1+(empData.taxa_he_fds_feriado||100)/100);
+    const vT=tH>0?hS*vS+hF*vF:0;
+    document.getElementById('he-stats').innerHTML=`<div class="sc"><div class="si a"><i class="fas fa-clock"></i></div><div><div class="sv">${tH.toFixed(1)}h</div><div class="sl">Total</div></div></div><div class="sc"><div class="si b"><i class="fas fa-briefcase"></i></div><div><div class="sv">${hS.toFixed(1)}h</div><div class="sl">Uteis</div></div></div><div class="sc"><div class="si r"><i class="fas fa-umbrella-beach"></i></div><div><div class="sv">${hF.toFixed(1)}h</div><div class="sl">FDS</div></div></div><div class="sc"><div class="si g"><i class="fas fa-money-bill-wave"></i></div><div><div class="sv">${empData.salario_base?'R$ '+vT.toFixed(2):'—'}</div><div class="sl">Valor</div></div></div>`;
+    const c=document.getElementById('he-tbl');
+    if(!heCache.length){c.innerHTML='<div class="es"><i class="fas fa-clock"></i><p>Nenhuma HE neste periodo.</p></div>';return;}
+    let h='<table class="ot"><thead><tr><th>Data</th><th>Dia</th><th>Tipo</th><th>Horas</th><th>Valor</th><th></th></tr></thead><tbody>';
+    heCache.forEach(r=>{
+        const d=parseD(r.data);
+        const valor = empData.salario_base ? 'R$ ' + (r.horas * (r.tipo === 'fds_feriado' ? vF : vS)).toFixed(2) : '—';
+        h += `<tr><td>${fmtBR(r.data)}</td><td>${DIAS[d.getDay()]}</td><td>${heTag(r.tipo)}</td><td><strong>${r.horas.toFixed(1)}h</strong></td><td>${valor}</td><td><button class="dbtn" onclick="delHE('${r.data}')"><i class="fas fa-trash"></i></button></td></tr>`;
+    });
+    h+='</tbody></table>';
+    c.innerHTML=h;
+}
+
+async function addHE(){
+    const data=document.getElementById('he-d').value;
+    const horas=parseFloat(document.getElementById('he-h').value);
+    if(!data){toast('Selecione data','err');return;}
+    if(!horas||horas<0.5||horas>12){toast('Horas entre 0.5 e 12','err');return;}
+    showLoad(true);
+    try{
+        await api('/employee/overtime',{method:'POST',body:JSON.stringify({data,horas})});
+        document.getElementById('he-d').value='';
+        document.getElementById('he-h').value='';
+        toast(horas.toFixed(1)+'h em '+fmtBR(data));
+        renHE();
+    }catch(e){toast(e.message,'err');}
+    showLoad(false);
+}
+
+async function delHE(date){
+    showLoad(true);
+    try{
+        await api('/employee/overtime/'+date,{method:'DELETE'});
+        toast('Removida','warn');
+        renHE();
+    }catch(e){toast(e.message,'err');}
+    showLoad(false);
+}
+
+function setAbsTipo(t){
+    absTipo=t;
+    document.getElementById('tb-falta').className='tipo-btn'+(t==='falta'?' on-falta':'');
+    document.getElementById('tb-atraso').className='tipo-btn'+(t==='atraso'?' on-atraso':'');
+    document.getElementById('abs-horas-wrap').classList.toggle('vis',t==='atraso');
+}
+
+async function renAbs(){
+    if(!empData)return;
+    const mf=getMF('abs-f');const ms=mf?mfToStr(mf):'all';
+    showLoad(true);
+    try{absCache=await api('/employee/absences?mes='+ms);}catch(e){absCache=[];}
+    showLoad(false);
+    let faltas=0,atrasos=0,hAtraso=0;
+    absCache.forEach(r=>{if(r.tipo==='falta')faltas++;else{atrasos++;hAtraso+=r.horas||0;}});
+    const vD=empData.salario_base/30,dF=faltas*vD,dA=hAtraso>0?(hAtraso/8)*vD:0;
+    document.getElementById('abs-stats').innerHTML=`<div class="sc"><div class="si r"><i class="fas fa-user-xmark"></i></div><div><div class="sv">${faltas}</div><div class="sl">Faltas</div></div></div><div class="sc"><div class="si a"><i class="fas fa-clock"></i></div><div><div class="sv">${atrasos}</div><div class="sl">Atrasos</div></div></div><div class="sc"><div class="si r"><i class="fas fa-money-bill"></i></div><div><div class="sv">R$ ${dF.toFixed(2)}</div><div class="sl">Desc. Faltas</div></div></div><div class="sc"><div class="si a"><i class="fas fa-coins"></i></div><div><div class="sv">R$ ${dA.toFixed(2)}</div><div class="sl">Desc. Atrasos</div></div></div>`;
+    const c=document.getElementById('abs-tbl');
+    if(!absCache.length){c.innerHTML='<div class="es"><i class="fas fa-check-circle"></i><p>Nenhuma falta ou atraso neste periodo.</p></div>';return;}
+    let h='<table class="ot"><thead><tr><th>Data</th><th>Dia</th><th>Tipo</th><th>Horas</th><th>Desconto</th><th></th></tr></thead><tbody>';
+    absCache.forEach(r=>{
+        const d=parseD(r.data);
+        const desc=r.tipo==='falta'?vD:(r.horas/8)*vD;
+        h+=`<tr><td>${fmtBR(r.data)}</td><td>${DIAS[d.getDay()]}</td><td>${absTag(r.tipo)}</td><td>${r.tipo==='falta'?'Dia inteiro':r.horas.toFixed(1)+'h'}</td><td style="color:var(--red-l);font-weight:600">- R$ ${desc.toFixed(2)}</td><td><button class="dbtn" onclick="delAbs('${r.data}')"><i class="fas fa-trash"></i></button></td></tr>`;
+    });
+    h+='</tbody></table>';
+    c.innerHTML=h;
+}
+
+async function addAbs(){
+    const data=document.getElementById('abs-d').value;
+    const horas=parseFloat(document.getElementById('abs-h').value);
+    if(!data){toast('Selecione data','err');return;}
+    if(absTipo==='atraso'&&(!horas||horas<0.5||horas>12)){
+        toast('Horas de atraso entre 0.5 e 12','err');return;
+    }
+    showLoad(true);
+    try{
+        await api('/employee/absences',{method:'POST',body:JSON.stringify({data,tipo:absTipo,horas:absTipo==='atraso'?horas:0})});
+        document.getElementById('abs-d').value='';
+        document.getElementById('abs-h').value='';
+        toast((absTipo==='falta'?'Falta':'Atraso de '+horas.toFixed(1)+'h')+' em '+fmtBR(data),'ok');
+        renAbs();
+    }catch(e){toast(e.message,'err');}
+    showLoad(false);
+}
+
+async function delAbs(date){
+    showLoad(true);
+    try{
+        await api('/employee/absences/'+date,{method:'DELETE'});
+        toast('Removido','warn');
+        renAbs();
+    }catch(e){toast(e.message,'err');}
+    showLoad(false);
+}
+
+async function renSal(){
+    if(!empData)return;
+    if(!empData.salario_base){
+        document.getElementById('sal-nodata').style.display='block';
+        document.getElementById('sal-data').style.display='none';
+        return;
+    }
+    document.getElementById('sal-nodata').style.display='none';
+    document.getElementById('sal-data').style.display='block';
+    const mf=getMF('sal-f');
+    const ms=mf?mfToStr(mf):(new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0'));
+    showLoad(true);
+    try{
+        const sal=await api('/employee/salary?mes='+ms);
+        let propTag = sal.proporcional ? ` <span class="tag tag-fds" style="font-size:9px">PROP.</span>` : '';
+        let folhaInfo = sal.folha_info ? `<div class="ts tm" style="margin-bottom:16px"><i class="fas fa-info-circle"></i> Fechamento dia ${sal.folha_info.fechamento} | Pagamento ${sal.folha_info.pagamento}º dia útil</div>` : '';
+        
+        document.getElementById('sal-stats').innerHTML=`<div class="sc"><div class="si g"><i class="fas fa-coins"></i></div><div><div class="sv">R$ ${sal.salario_base.toFixed(2)}</div><div class="sl">Base ${propTag}</div></div></div><div class="sc"><div class="si a"><i class="fas fa-clock"></i></div><div><div class="sv">R$ ${sal.valor_total.toFixed(2)}</div><div class="sl">HE</div></div></div><div class="sc"><div class="si r"><i class="fas fa-minus-circle"></i></div><div><div class="sv">R$ ${sal.total_descontos.toFixed(2)}</div><div class="sl">Descontos</div></div></div><div class="sc"><div class="si b"><i class="fas fa-wallet"></i></div><div><div class="sv">R$ ${sal.salario_liquido.toFixed(2)}</div><div class="sl">Liquido</div></div></div>`;
+        
+        let baseLabel = sal.proporcional ? `Salario Base (Proporcional)` : `Salario Base`;
+        let h=folhaInfo + `<div class="sd"><div class="sdl">${baseLabel}</div><div class="sdv">R$ ${sal.salario_base.toFixed(2)}</div></div><div class="sdiv"></div><div class="sd"><div class="sdl">HE Dias Uteis (${sal.horas_semana.toFixed(1)}h)</div><div class="sdv g">+ R$ ${sal.valor_semana.toFixed(2)}</div></div><div class="sd"><div class="sdl">HE FDS/Feriado (${sal.horas_fds.toFixed(1)}h)</div><div class="sdv g">+ R$ ${sal.valor_fds.toFixed(2)}</div></div><div class="sdiv"></div><div class="sd"><div class="sdl">Desconto VT (6%)</div><div class="sdv r">- R$ ${sal.desconto_vt.toFixed(2)}</div></div><div class="sd"><div class="sdl">Desc. Faltas (${sal.faltas}x)</div><div class="sdv r">- R$ ${sal.desconto_faltas.toFixed(2)}</div></div><div class="sd"><div class="sdl">Desc. Atrasos (${sal.horas_atraso.toFixed(1)}h)</div><div class="sdv r">- R$ ${sal.desconto_atrasos.toFixed(2)}</div></div><div class="sdiv"></div><div class="sd"><div class="sdl">Salario Liquido</div><div class="sdv">R$ ${sal.salario_liquido.toFixed(2)}</div></div>`;
+        document.getElementById('sal-det').innerHTML=h;
+        const totG=sal.salario_base+sal.valor_total||1;
+        document.getElementById('sal-chart').innerHTML=`<div class="sd"><div class="sdl">Base (${(sal.salario_base/totG*100).toFixed(0)}%)</div><div class="sbar"><div class="sbf base" style="width:${(sal.salario_base/totG*100)}%"></div></div></div><div class="sd"><div class="sdl">HE Semana (${(sal.valor_semana/totG*100).toFixed(0)}%)</div><div class="sbar"><div class="sbf semana" style="width:${(sal.valor_semana/totG*100)}%"></div></div></div><div class="sd"><div class="sdl">HE FDS (${(sal.valor_fds/totG*100).toFixed(0)}%)</div><div class="sbar"><div class="sbf fds" style="width:${(sal.valor_fds/totG*100)}%"></div></div></div>`;
+    }catch(e){toast(e.message,'err');}
+    showLoad(false);
+}
+
+async function renAdmEmp(){
+    showLoad(true);
+    try{
+        const emps=await api('/admin/employees');
+        let totHE=0,totF=0;
+        emps.forEach(e=>{totHE+=e.he_mes||0;totF+=e.faltas_mes||0;});
+        document.getElementById('adm-stats').innerHTML=`<div class="sc"><div class="si b"><i class="fas fa-users"></i></div><div><div class="sv">${emps.length}</div><div class="sl">Funcionarios</div></div></div><div class="sc"><div class="si a"><i class="fas fa-clock"></i></div><div><div class="sv">${totHE.toFixed(1)}h</div><div class="sl">HE no Mes</div></div></div><div class="sc"><div class="si r"><i class="fas fa-user-xmark"></i></div><div><div class="sv">${totF}</div><div class="sl">Faltas no Mes</div></div></div>`;
+        const t=document.getElementById('adm-tbl');
+        if(!emps.length){t.innerHTML='<div class="es"><i class="fas fa-users"></i><p>Nenhum funcionario.</p></div>';showLoad(false);return;}
+        let h='<table class="at"><thead><tr><th>Matricula</th><th>Nome</th><th>Entrada</th><th>HE</th><th>Faltas</th><th></th></tr></thead><tbody>';
+        emps.forEach(e=>{h+=`<tr><td>${e.matricula}</td><td>${e.nome}</td><td>${e.data_entrada?fmtBR(e.data_entrada):'—'}</td><td>${(e.he_mes||0).toFixed(1)}h</td><td>${e.faltas_mes||0}</td><td><button class="dbtn" onclick="viewEmp('${e.matricula}')" title="Ver"><i class="fas fa-eye"></i></button> <button class="dbtn" onclick="confDel('${e.matricula}')" title="Excluir"><i class="fas fa-trash"></i></button></td></tr>`;});
+        h+='</tbody></table>';t.innerHTML=h;
+    }catch(e){toast(e.message,'err');}
+    showLoad(false);
+}
+
+async function viewEmp(mat){
+    showLoad(true);
+    try{
+        const e=await api('/admin/employees/'+mat);
+        document.getElementById('md-name').textContent=e.nome;
+        document.getElementById('md-mat').textContent='Matricula: '+e.matricula;
+        let b=`<div class="pg"><div class="sd"><div class="sdl">Salario Base</div><div class="sdv" style="font-size:14px">R$ ${(e.salario_base||0).toFixed(2)}</div></div><div class="sd"><div class="sdl">Data Entrada</div><div class="sdv" style="font-size:14px">${e.data_entrada?fmtBR(e.data_entrada):'—'}</div></div><div class="sd"><div class="sdl">Taxa HE Util/FDS</div><div class="sdv" style="font-size:14px">${e.taxa_he_semana||50}% / ${e.taxa_he_fds_feriado||100}%</div></div><div class="sd"><div class="sdl">Recebe VT</div><div class="sdv" style="font-size:14px">${e.recebe_vt?'Sim':'Não'}</div></div></div><div class="sdiv"></div><div class="ct"><i class="fas fa-clock"></i> Horas Extras (${(e.he_mes||0).toFixed(1)}h)</div>`;
+        if(e.overtime_rows&&e.overtime_rows.length){b+='<table class="ot"><thead><tr><th>Data</th><th>Tipo</th><th>Horas</th></tr></thead><tbody>';e.overtime_rows.forEach(r=>{b+=`<tr><td>${fmtBR(r.data)}</td><td>${heTag(r.tipo)}</td><td>${r.horas}h</td></tr>`;});b+='</tbody></table>';}else{b+='<p class="ts tm">Nenhuma HE neste mes.</p>';}
+        b+='<div class="sdiv"></div><div class="ct"><i class="fas fa-user-xmark"></i> Faltas/Atrasos</div>';
+        if(e.absences_rows&&e.absences_rows.length){b+='<table class="ot"><thead><tr><th>Data</th><th>Tipo</th><th>Horas</th></tr></thead><tbody>';e.absences_rows.forEach(r=>{b+=`<tr><td>${fmtBR(r.data)}</td><td>${absTag(r.tipo)}</td><td>${r.tipo==='falta'?'—':r.horas+'h'}</td></tr>`;});b+='</tbody></table>';}else{b+='<p class="ts tm">Nenhuma falta neste mes.</p>';}
+        document.getElementById('md-body').innerHTML=b;
+        oMo('mo-det');
+    }catch(err){toast(err.message,'err');}
+    showLoad(false);
+}
+
+function confDel(mat){document.getElementById('del-btn').onclick=()=>delEmp(mat);oMo('mo-del');}
+async function delEmp(mat){
+    showLoad(true);
+    try{
+        await api('/admin/employees/'+mat,{method:'DELETE'});
+        toast('Excluido','warn');
+        cMo('mo-del');
+        renAdmEmp();
+    }catch(e){toast(e.message,'err');}
+    showLoad(false);
+}
+
+async function renAdmCfg(){
+    showLoad(true);
+    try{
+        const c=await api('/admin/company');
+        document.getElementById('cfg-n').value=c.nome||'';
+        document.getElementById('cfg-l').value=c.logo_url||'';
+        document.getElementById('cfg-pv').src=c.logo_url||DEF_LOGO;
+        document.getElementById('cfg-fechamento').value=c.dia_fechamento||25;
+        document.getElementById('cfg-pagamento').value=c.dia_pagamento||5;
+    }catch(e){toast(e.message,'err');}
+    showLoad(false);
+}
+
+async function saveCfg(){
+    const n=document.getElementById('cfg-n').value.trim();
+    const l=document.getElementById('cfg-l').value.trim();
+    const fc=document.getElementById('cfg-fechamento').value.trim();
+    const pg=document.getElementById('cfg-pagamento').value.trim();
+    if(!n){toast('Nome obrigatorio','err');return;}
+    if(!fc||parseInt(fc)<1||parseInt(fc)>31){toast('Dia de fechamento invalido (1-31)','err');return;}
+    if(!pg||parseInt(pg)<1||parseInt(pg)>31){toast('Dia de pagamento invalido (1-31)','err');return;}
+    showLoad(true);
+    try{
+        await api('/admin/company',{method:'PUT',body:JSON.stringify({nome:n,logo_url:l,dia_fechamento:fc,dia_pagamento:pg})});
+        toast('Salvo');
+        loadCompany();
+    }catch(e){toast(e.message,'err');}
+    showLoad(false);
+}
+
+window.onload=()=>{checkSession();};
+</script>
+</body>
+</html>

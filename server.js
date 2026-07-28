@@ -18,7 +18,7 @@ app.use(session({
 
 // ===== CONEXÃO MONGODB =====
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fvb';
-mongoose.connect(MONGODB_URI);
+mongoose.connect(MONGODB_URI).then(() => console.log('MongoDB Conectado!')).catch(err => console.error('Erro MongoDB:', err));
 
 const DBSchema = new mongoose.Schema({
     _id: { type: String, default: 'main_db' },

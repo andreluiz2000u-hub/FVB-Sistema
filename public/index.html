@@ -253,7 +253,7 @@ const DIAS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const DEF_LOGO='/logo.png';
 let empData=null,calY=new Date().getFullYear(),calM=new Date().getMonth(),heCache=[],absCache=[],vtAtivo=true,absTipo='falta';
 
-async function api(p,o={}){const r=await fetch('/api'+p,{headers:{'Content-Type':'application/json'},credentials:'same-origin',...o});const d=await r.json();if(!r.ok)throw new Error(d.erro||'Erro');return d;}
+async function api(p,o={}){const r=await fetch('/api'+p,{headers:{'Content-Type':'application/json'},credentials:'same-origin',...o});let d={};try{d=await r.json();}catch(e){throw new Error('Erro de conexao com o servidor');}if(!r.ok)throw new Error(d.erro||'Erro');return d;}    
 function toast(m,t='ok'){const c=document.getElementById('toasts'),e=document.createElement('div');e.className='toast '+t;const i={ok:'fa-check-circle',err:'fa-times-circle',warn:'fa-exclamation-triangle'};e.innerHTML='<i class="fas '+(i[t]||i.ok)+'"></i> '+m;c.appendChild(e);setTimeout(()=>{e.classList.add('out');setTimeout(()=>e.remove(),250);},3200);}
 function showLoad(v){document.getElementById('loading').classList.toggle('on',v);}
 function go(id){document.querySelectorAll('.ap,.dash').forEach(e=>e.classList.remove('on'));document.getElementById(id).classList.add('on');}
